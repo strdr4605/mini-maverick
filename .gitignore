@@ -2,3 +2,10 @@
 node_modules
 dist
 data/
+
+# OpenClaw runtime files
+openclaw/*.bak
+openclaw/workspace/
+openclaw/logs/
+openclaw/canvas/
+openclaw/update-check.json
