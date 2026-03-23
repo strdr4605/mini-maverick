@@ -1,0 +1,38 @@
+services:
+  openclaw:
+    image: ghcr.io/openclaw/openclaw:latest
+    environment:
+      HOME: /home/node
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+    volumes:
+      - ./openclaw:/home/node/.openclaw
+      - openclaw-workspace:/home/node/.openclaw/workspace
+    ports:
+      - "18789:18789"
+    init: true
+    restart: unless-stopped
+    command:
+      [
+        "node",
+        "openclaw.mjs",
+        "gateway",
+        "--bind", "lan",
+        "--port", "18789",
+        "--allow-unconfigured",
+      ]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  openclaw-workspace:
