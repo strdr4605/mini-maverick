@@ -37,7 +37,7 @@ export function useChat() {
           setMessages((prev) => {
             const last = prev[prev.length - 1];
             if (last?.streaming) {
-              return [...prev.slice(0, -1), { ...last, content: last.content + msg.content }];
+              return [...prev.slice(0, -1), { ...last, content: msg.content }];
             }
             return [...prev, { role: "assistant", content: msg.content, streaming: true }];
           });
