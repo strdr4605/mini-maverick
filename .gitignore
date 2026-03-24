@@ -9,3 +9,6 @@ openclaw/workspace/
 openclaw/logs/
 openclaw/canvas/
 openclaw/update-check.json
+openclaw/agents/
+openclaw/devices/
+openclaw/identity/

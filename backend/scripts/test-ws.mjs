@@ -11,6 +11,13 @@
  *
  * Example:
  *   node scripts/test-ws.mjs "what is 2+2?"
+ *
+ * Prerequisites:
+ *   docker compose up -d
+ *
+ *   On first run, approve the backend device:
+ *     docker exec mini-maverick-openclaw-1 node openclaw.mjs devices list
+ *     docker exec mini-maverick-openclaw-1 node openclaw.mjs devices approve <deviceId>
  */
 
 import { WebSocket } from "ws";
