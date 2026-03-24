@@ -1,4 +1,12 @@
 services:
+  openclaw-workspace-init:
+    image: ghcr.io/openclaw/openclaw:latest
+    user: root
+    volumes:
+      - openclaw-workspace:/home/node/.openclaw/workspace
+    command: ["chown", "-R", "node:node", "/home/node/.openclaw/workspace"]
+    restart: "no"
+
   openclaw:
     image: ghcr.io/openclaw/openclaw:latest
     environment:
@@ -8,8 +16,12 @@ services:
     volumes:
       - ./openclaw:/home/node/.openclaw
       - openclaw-workspace:/home/node/.openclaw/workspace
+    depends_on:
+      openclaw-workspace-init:
+        condition: service_completed_successfully
     ports:
       - "18789:18789"
+      - "3001:3001"
     init: true
     restart: unless-stopped
     command:
@@ -33,6 +45,20 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+
+  backend:
+    build: ./backend
+    network_mode: "service:openclaw"
+    environment:
+      OPENCLAW_WS_URL: ws://127.0.0.1:18789
+      OPENCLAW_AUTH_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      DATA_DIR: /app/data
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      openclaw:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   openclaw-workspace:

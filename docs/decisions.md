@@ -31,3 +31,30 @@ Key suggestions I made during planning:
 - **Why Fastify**: lightweight, native WS support via @fastify/websocket, fast startup, good TS support. Express alternative considered but Fastify has better perf and plugin ecosystem
 - **Why Dexie over raw IndexedDB**: ergonomic API, reactive queries via dexie-react-hooks, versioned schema migrations. Raw IndexedDB API is verbose and error-prone
 - **Streaming strategy**: ref-based accumulator with requestAnimationFrame batching — prevents re-render storm from rapid WS deltas while keeping UI responsive
+
+### Backend independence from OpenClaw
+
+Backend starts without waiting for OpenClaw — no `depends_on` blocking startup. If OpenClaw is unavailable, backend sends `{ type: "status", connected: false }` to frontend clients and returns an error when they try to send messages. Reconnection happens automatically in background (3s retry).
+
+**Why:** Decouples services — backend should serve the frontend regardless of OpenClaw state. Frontend can show a meaningful "OpenClaw unavailable" warning instead of the whole stack failing to start. Also enables development/testing of frontend without OpenClaw running.
+
+## 2026-03-23
+
+### Ed25519 device auth integrated into handshake
+
+OpenClaw gateway v3 requires device authentication (Ed25519 keypair) to obtain `operator.write` scope needed for `chat.send`. Integrated directly into Phase 2 rather than as a separate bonus branch — it was a hard requirement for the handshake to succeed, not optional.
+
+Device ID derived as full 64-char SHA-256 hex of the raw 32-byte Ed25519 public key. Keypair persisted to `DATA_DIR/device-key.json` (Docker volume `./data`) so the same device identity survives container restarts.
+
+First run requires manual device approval: `docker exec mini-maverick-openclaw-1 node openclaw.mjs devices approve <requestId>`. Once approved, subsequent restarts reconnect automatically.
+
+### Docker workspace volume permissions fix
+
+`openclaw-workspace` named volume is created by Docker with `root` ownership, but OpenClaw runs as `node`. This caused `EACCES` errors when OpenClaw tried to read/write workspace files (e.g. `AGENTS.md`), which made chat requests fail.
+
+Fix: added an `openclaw-workspace-init` init container (`user: root`, `restart: "no"`) that runs `chown -R node:node /home/node/.openclaw/workspace` before OpenClaw starts. OpenClaw `depends_on` this service completing successfully.
+
+**Why this approach over alternatives:**
+- `docker compose exec` chown at runtime: requires manual step, breaks on fresh deploys
+- Named volume with custom driver: overengineered for this case
+- Init container: self-contained, runs once per volume creation, idiomatic Docker pattern
