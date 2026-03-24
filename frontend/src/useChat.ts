@@ -19,6 +19,7 @@ export function useChat() {
   const [connected, setConnected] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
+  const isStreamingRef = useRef(false);
 
   useEffect(() => {
     function connect() {
@@ -34,13 +35,16 @@ export function useChat() {
         }
 
         if (msg.type === "delta") {
-          setMessages((prev) => {
-            const last = prev[prev.length - 1];
-            if (last?.streaming) {
+          if (isStreamingRef.current) {
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (!last) return prev;
               return [...prev.slice(0, -1), { ...last, content: msg.content }];
-            }
-            return [...prev, { role: "assistant", content: msg.content, streaming: true }];
-          });
+            });
+          } else {
+            isStreamingRef.current = true;
+            setMessages((prev) => [...prev, { role: "assistant", content: msg.content, streaming: true }]);
+          }
           return;
         }
 
@@ -52,11 +56,13 @@ export function useChat() {
             }
             return prev;
           });
+          isStreamingRef.current = false;
           setStreaming(false);
           return;
         }
 
         if (msg.type === "error") {
+          isStreamingRef.current = false;
           setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${msg.message}` }]);
           setStreaming(false);
         }
@@ -74,6 +80,7 @@ export function useChat() {
 
   function send(content: string) {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    isStreamingRef.current = false;
     setMessages((prev) => [...prev, { role: "user", content }]);
     setStreaming(true);
     wsRef.current.send(JSON.stringify({ type: "message", content }));
