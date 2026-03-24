@@ -31,11 +31,10 @@ export default function App() {
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-gb-bg2">
         <span className="font-semibold text-sm text-gb-fg">mini-maverick</span>
-        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-          connected
-            ? "bg-green-100 text-green-800"
-            : "bg-red-100 text-red-800"
-        }`}>
+        <span className={`text-xs px-2 py-1 rounded-full font-medium ${connected
+          ? "bg-green-100 text-green-800"
+          : "bg-red-100 text-red-800"
+          }`}>
           {connected ? "connected" : "disconnected"}
         </span>
       </header>
@@ -49,11 +48,10 @@ export default function App() {
         )}
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            <span className={`max-w-[75%] px-4 py-2 rounded-xl text-sm leading-relaxed whitespace-pre-wrap break-words ${
-              msg.role === "user"
-                ? "bg-gb-blue text-white rounded-br-sm"
-                : "bg-gb-bg1 text-gb-fg rounded-bl-sm"
-            }`}>
+            <span className={`max-w-[75%] px-4 py-2 rounded-xl text-sm leading-relaxed whitespace-pre-wrap break-words ${msg.role === "user"
+              ? "bg-gb-blue text-white rounded-br-sm"
+              : "bg-gb-bg1 text-gb-fg rounded-bl-sm"
+              }`}>
               {msg.content}
               {msg.streaming && (
                 <span className="inline-block w-0.5 h-4 ml-0.5 align-text-bottom animate-pulse bg-gb-fg-muted" />
@@ -71,7 +69,7 @@ export default function App() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Message OpenClaw… (Enter to send, Shift+Enter for newline)"
+          placeholder="Message Mini-Maverick… (Enter to send, Shift+Enter for newline)"
           rows={1}
           disabled={streaming}
           className="flex-1 bg-gb-bg1 text-gb-fg border border-gb-bg2 rounded-lg px-3 py-2 text-sm resize-none outline-none focus:border-gb-blue disabled:opacity-50 placeholder:text-gb-fg-muted"
