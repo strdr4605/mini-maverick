@@ -60,5 +60,11 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
 volumes:
   openclaw-workspace:

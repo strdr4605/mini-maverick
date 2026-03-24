@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-03-24
+
+### Frontend chat UI
+- Added `frontend/` — React + Vite + TypeScript + react-aria-components + Tailwind CSS
+- `src/useChat.ts` — WebSocket hook: connects to backend, streams deltas, auto-reconnects every 3s
+- `src/App.tsx` — chat UI: message list, streaming cursor, connection status badge, textarea input
+- Gruvbox light theme via Tailwind `@theme` CSS variables
+- `Dockerfile` + `nginx.conf` — multi-stage build, served on port 8080
+- Added frontend service to `docker-compose.yml`
+- AI usage: Claude Code scaffolded Vite project, implemented hook and UI, configured Tailwind theme
+
 ## 2026-03-23
 
 ### Backend WebSocket proxy
