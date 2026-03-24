@@ -20,7 +20,7 @@ Used Claude Code with brainstorming skill to plan the architecture. Started with
 
 Key suggestions I made during planning:
 - **TanStack Query + local-first persistence**: use react-query for state management with IndexedDB persistence (Dexie) — survives refresh, offline-friendly, aligns with Maverick's eventual multi-device sync needs
-- **Component library**: evaluated react-aria and Base UI (MUI), settled on shadcn/ui (Base UI primitives) for chat-optimized UI — lightweight, composable, good for streaming message rendering
+- **Component library**: evaluated react-aria and shadcn/ui (Base UI primitives), settled on react-aria-components — lightweight, accessibility built-in, no extra dependencies
 - **Git workflow**: each feature = separate branch → PR → squash merge to master after review. Keeps history clean, enables incremental code review
 - **OpenClaw as dev tool**: considered using the OpenClaw instance itself to help develop later tasks after Docker setup — meta approach, though not pursued
 - **Reference product**: identified sintra.ai as the simpler B2C agent app category we're competing with (vs LangChain at the complex end)
@@ -37,6 +37,28 @@ Key suggestions I made during planning:
 Backend starts without waiting for OpenClaw — no `depends_on` blocking startup. If OpenClaw is unavailable, backend sends `{ type: "status", connected: false }` to frontend clients and returns an error when they try to send messages. Reconnection happens automatically in background (3s retry).
 
 **Why:** Decouples services — backend should serve the frontend regardless of OpenClaw state. Frontend can show a meaningful "OpenClaw unavailable" warning instead of the whole stack failing to start. Also enables development/testing of frontend without OpenClaw running.
+
+## 2026-03-24
+
+### Frontend stack choices
+- **react-aria-components**: chosen over shadcn/ui (originally planned) — lighter, no class-variance-authority overhead, accessibility built-in, fits POC scope
+- **Tailwind CSS v4 with `@theme`**: Gruvbox light palette defined as CSS custom properties via `@theme {}` block — makes colors available as utility classes (`bg-gb-blue`, `text-gb-fg`) without a separate config file
+- **No dark mode**: light-only theme, Gruvbox light palette (`#f9f5d7` background, `#3c3836` foreground)
+
+### OpenClaw streaming: cumulative text per delta
+OpenClaw's `chat` events send the **full accumulated text** in each delta, not individual token chunks. Each event is a consistent snapshot of the message so far — useful for reconnect/replay, but means clients must replace, not append, on each delta.
+
+Frontend `useChat` hook replaces `streamingMessage.content` on every delta (not appends). The streaming message is kept in local state until `done`, then persisted to IndexedDB and invalidated in React Query cache.
+
+### Chat history persistence: Dexie + TanStack Query
+- **Dexie**: ergonomic IndexedDB wrapper — versioned schema, promise-based API. Raw IndexedDB is too verbose for a POC.
+- **TanStack Query**: manages the DB read as a query (`queryFn: db.messages.orderBy("createdAt").toArray()`). On `done`/`error`, message is written to DB and query invalidated — React Query re-fetches and updates the UI.
+- **Streaming message kept separate**: in-progress assistant message lives in local state (`streamingMessage`), not in the DB, to avoid partial writes. Only persisted on `done`.
+
+### Removed React StrictMode
+StrictMode double-invokes `useEffect` in development, which opened two WebSocket connections simultaneously. This caused duplicate DB writes (two `done` events from two connections), incomplete streaming messages (second connection received deltas, first connection fired `done` with empty ref), and double error entries.
+
+WS connections are inherently stateful and long-lived — StrictMode's remount pattern is fundamentally incompatible with this pattern. Removed StrictMode rather than adding complex guards that would obscure the actual logic.
 
 ## 2026-03-23
 
